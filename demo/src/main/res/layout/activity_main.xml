@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:ignore="ContentDescription,HardcodedText">
+
+    <RadioGroup
+        android:id="@+id/group_framework"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toTopOf="@id/dual_pane"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <RadioButton
+            android:id="@+id/radio_view"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="View"
+            android:textAppearance="?android:textAppearanceMedium" />
+
+        <RadioButton
+            android:id="@+id/radio_compose"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="10dp"
+            android:text="Compose"
+            android:textAppearance="?android:textAppearanceMedium" />
+
+    </RadioGroup>
+
+    <LinearLayout
+        android:id="@+id/side_group"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:layout_marginStart="16dp"
+        android:foreground="@drawable/border"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:paddingHorizontal="20dp"
+        app:layout_constraintBottom_toBottomOf="@id/dual_pane"
+        app:layout_constraintEnd_toStartOf="@id/dual_pane"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/dual_pane">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:labelFor="@id/is_badge_enabled"
+            android:text="Badge" />
+
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/is_badge_enabled"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            app:switchPadding="5dp" />
+
+        <TextView
+            android:id="@+id/label_is_dot"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="15dp"
+            android:labelFor="@id/badge_text"
+            android:text="Dot" />
+
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/is_dot"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:switchPadding="5dp" />
+
+        <EditText
+            android:id="@+id/badge_text"
+            android:layout_width="60dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:gravity="center"
+            android:hint="Text"
+            android:imeOptions="actionDone"
+            android:importantForAutofill="no"
+            android:inputType="text"
+            android:maxLength="3"
+            android:minHeight="48dp"
+            android:text="99+"
+            tools:ignore="LabelFor" />
+
+    </LinearLayout>
+
+    <com.gonodono.bda.demo.internal.DualPaneView
+        android:id="@+id/dual_pane"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginEnd="16dp"
+        android:foreground="@drawable/border"
+        app:layout_constraintBottom_toTopOf="@+id/horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/side_group"
+        app:layout_constraintTop_toBottomOf="@id/group_framework">
+
+        <FrameLayout
+            android:id="@+id/view_container"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <View
+                android:id="@+id/view"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_gravity="center"
+                android:background="?colorControlHighlight" />
+
+        </FrameLayout>
+
+        <androidx.compose.ui.platform.ComposeView
+            android:id="@+id/compose_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+    </com.gonodono.bda.demo.internal.DualPaneView>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="5dp"
+        android:labelFor="@id/progress"
+        android:text="Progress"
+        app:layout_constraintBottom_toBottomOf="@id/progress"
+        app:layout_constraintEnd_toStartOf="@id/vertical"
+        app:layout_constraintTop_toTopOf="@id/progress" />
+
+    <com.google.android.material.slider.Slider
+        android:id="@+id/progress"
+        android:layout_width="150dp"
+        android:layout_height="wrap_content"
+        android:tag="divider"
+        app:layout_constraintBottom_toTopOf="@+id/badge_corner"
+        app:layout_constraintStart_toEndOf="@id/vertical"
+        app:layout_constraintTop_toBottomOf="@+id/dual_pane"
+        app:labelBehavior="gone" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="5dp"
+        android:labelFor="@id/badge_corner"
+        android:text="Badge corner"
+        app:layout_constraintBottom_toBottomOf="@id/badge_corner"
+        app:layout_constraintEnd_toStartOf="@id/vertical"
+        app:layout_constraintTop_toTopOf="@id/badge_corner" />
+
+    <com.google.android.material.slider.Slider
+        android:id="@+id/badge_corner"
+        android:layout_width="150dp"
+        android:layout_height="wrap_content"
+        android:stepSize="1"
+        android:tag="divider"
+        android:value="1"
+        android:valueTo="3"
+        app:layout_constraintBottom_toTopOf="@+id/badge_offset"
+        app:layout_constraintStart_toEndOf="@id/vertical"
+        app:layout_constraintTop_toBottomOf="@+id/progress" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="5dp"
+        android:labelFor="@id/badge_offset"
+        android:text="Badge offset"
+        app:layout_constraintBottom_toBottomOf="@id/badge_offset"
+        app:layout_constraintEnd_toStartOf="@id/vertical"
+        app:layout_constraintTop_toTopOf="@id/badge_offset" />
+
+    <com.google.android.material.slider.Slider
+        android:id="@+id/badge_offset"
+        android:layout_width="150dp"
+        android:layout_height="wrap_content"
+        android:tag="divider"
+        android:value="0"
+        android:valueFrom="-10"
+        android:valueTo="10"
+        app:layout_constraintBottom_toTopOf="@id/badge_clip_margin"
+        app:layout_constraintStart_toEndOf="@id/vertical"
+        app:layout_constraintTop_toBottomOf="@+id/badge_corner" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="5dp"
+        android:labelFor="@id/badge_clip_margin"
+        android:text="Badge clip margin"
+        app:layout_constraintBottom_toBottomOf="@id/badge_clip_margin"
+        app:layout_constraintEnd_toStartOf="@id/vertical"
+        app:layout_constraintTop_toTopOf="@id/badge_clip_margin" />
+
+    <com.google.android.material.slider.Slider
+        android:id="@+id/badge_clip_margin"
+        android:layout_width="150dp"
+        android:layout_height="wrap_content"
+        android:tag="divider"
+        android:value="6"
+        android:valueTo="10"
+        app:layout_constraintBottom_toTopOf="@+id/badge_animation"
+        app:layout_constraintStart_toEndOf="@id/vertical"
+        app:layout_constraintTop_toBottomOf="@+id/badge_offset" />
+
+    <TextView
+        android:id="@+id/label_badge_animation"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="5dp"
+        android:labelFor="@id/badge_animation"
+        android:text="Badge animation"
+        app:layout_constraintBottom_toBottomOf="@id/badge_animation"
+        app:layout_constraintEnd_toStartOf="@id/badge_animation"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/badge_animation" />
+
+    <androidx.appcompat.widget.AppCompatSpinner
+        android:id="@+id/badge_animation"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:foreground="@drawable/border_spinner_right"
+        android:minHeight="48dp"
+        android:stepSize="1"
+        android:tag="divider"
+        android:valueTo="6"
+        app:layout_constraintBottom_toTopOf="@+id/badge_color"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/label_badge_animation"
+        app:layout_constraintTop_toBottomOf="@+id/badge_clip_margin" />
+
+    <TextView
+        android:id="@+id/label_colors"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Colors"
+        app:layout_constraintBottom_toBottomOf="@id/badge_color"
+        app:layout_constraintEnd_toStartOf="@id/badge_color"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/badge_color" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/badge_color"
+        style="?materialButtonOutlinedStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:drawableEnd="@drawable/color_swatch"
+        android:text="Badge"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/badge_text_color"
+        app:layout_constraintStart_toEndOf="@id/label_colors"
+        app:layout_constraintTop_toBottomOf="@+id/badge_animation"
+        app:iconPadding="5dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/badge_text_color"
+        style="?materialButtonOutlinedStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:drawableEnd="@drawable/color_swatch"
+        android:text="Text"
+        app:layout_constraintBottom_toBottomOf="@id/badge_color"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/badge_color"
+        app:layout_constraintTop_toTopOf="@id/badge_color"
+        app:iconPadding="5dp" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/horizontal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.4" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/vertical"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.45" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

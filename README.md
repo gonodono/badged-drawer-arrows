@@ -4,12 +4,9 @@ An example of the androidx [`DrawerArrowDrawable`][DrawerArrowDrawable] class
 extended to add a badge with various features.
 
 <p align="center">
-<img src="images/examples.mp4"
+<img src="images/examples.png"
 alt="Examples of various setups."
-width="50%" />
-</p>
-<p align="center">
-<sup><em>(Actual animation is much smoother.)</em></sup>
+width="30%" />
 </p>
 
 A Compose version is also included. It simply wraps the custom drawable in an
@@ -55,10 +52,10 @@ Compose's [`BadgedDrawerArrow`][BadgedDrawerArrow].
 | `badgeAnimation`      | `Animation`       | (Optional) animation to apply to the badge. |
 | `autoMirrorOnReverse` | `Boolean`         | Whether to mimic `ActionBarDrawerToggle`.   |
 
-`ActionBarDrawerToggle` calls `setVerticalMirror()` on its `DrawerArrowDrawable`
-when its position value hits `0F` and `1F`, causing it to rotate in the same
-direction when the drawer closes as when it opens. That's what the
-`autoMirrorOnReverse` property does: tells the drawable to handle this
+`ActionBarDrawerToggle` calls [`setVerticalMirror()`][setVerticalMirror] on its
+`DrawerArrowDrawable` when its position value hits `0F` and `1F`, causing it to
+rotate in the same direction when the drawer closes as when it opens. That's
+what the `autoMirrorOnReverse` property does: tells the drawable to handle this
 automatically without being attached to an `ActionBarDrawerToggle`.
 
 ## Usage
@@ -280,7 +277,7 @@ your own figures.
 <p align="center">
 <img src="images/demo.png"
 alt="Screenshot of the demo app."
-width="10%" />
+width="15%" />
 </p>
 
 <br />
@@ -309,7 +306,6 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-
   [DrawerArrowDrawable]: https://developer.android.com/reference/kotlin/androidx/appcompat/graphics/drawable/DrawerArrowDrawable
 
   [JitPack]: https://jitpack.io/#gonodono/badged-drawer-arrows
@@ -317,3 +313,5 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
   [BadgedDrawerArrowDrawable]: https://github.com/gonodono/badged-drawer-arrows/tree/main/view/src/main/kotlin/com/gonodono/bda/view/BadgedDrawerArrowDrawable.kt
 
   [BadgedDrawerArrow]: https://github.com/gonodono/badged-drawer-arrows/tree/main/compose/src/main/kotlin/com/gonodono/bda/compose/BadgedDrawerArrow.kt
+
+  [setVerticalMirror]: https://developer.android.com/reference/kotlin/androidx/appcompat/graphics/drawable/DrawerArrowDrawable#setVerticalMirror(boolean)

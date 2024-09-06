@@ -207,7 +207,7 @@
         android:tag="divider"
         android:value="6"
         android:valueTo="10"
-        app:layout_constraintBottom_toTopOf="@+id/badge_animation"
+        app:layout_constraintBottom_toTopOf="@+id/badge_motion"
         app:layout_constraintStart_toEndOf="@id/vertical"
         app:layout_constraintTop_toBottomOf="@+id/badge_offset" />
 
@@ -216,16 +216,16 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="5dp"
-        android:labelFor="@id/badge_animation"
+        android:labelFor="@id/badge_motion"
         android:text="Badge animation"
-        app:layout_constraintBottom_toBottomOf="@id/badge_animation"
-        app:layout_constraintEnd_toStartOf="@id/badge_animation"
+        app:layout_constraintBottom_toBottomOf="@id/badge_motion"
+        app:layout_constraintEnd_toStartOf="@id/badge_motion"
         app:layout_constraintHorizontal_chainStyle="packed"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@id/badge_animation" />
+        app:layout_constraintTop_toTopOf="@id/badge_motion" />
 
     <androidx.appcompat.widget.AppCompatSpinner
-        android:id="@+id/badge_animation"
+        android:id="@+id/badge_motion"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:foreground="@drawable/border_spinner_right"
@@ -260,7 +260,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@id/badge_text_color"
         app:layout_constraintStart_toEndOf="@id/label_colors"
-        app:layout_constraintTop_toBottomOf="@+id/badge_animation"
+        app:layout_constraintTop_toBottomOf="@+id/badge_motion"
         app:iconPadding="5dp" />
 
     <com.google.android.material.button.MaterialButton

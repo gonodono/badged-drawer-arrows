@@ -36,9 +36,6 @@ android {
     }
     kotlinOptions {
         jvmTarget = "17"
-        kotlinOptions {
-            freeCompilerArgs += "-Xcontext-receivers"
-        }
     }
 }
 
@@ -58,4 +55,5 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.activity.compose)
     debugImplementation(libs.androidx.ui.tooling)
+    debugImplementation(libs.androidx.ui.tooling.preview)
 }

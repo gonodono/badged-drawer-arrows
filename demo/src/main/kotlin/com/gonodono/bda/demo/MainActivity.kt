@@ -36,12 +36,12 @@ import com.gonodono.bda.demo.internal.setSwatchColor
 import com.gonodono.bda.demo.internal.showColorDialog
 import com.gonodono.bda.view.BadgedDrawerArrowDrawable
 import androidx.compose.ui.graphics.Color as ComposeColor
-import com.gonodono.bda.compose.Animation as ComposeAnimation
 import com.gonodono.bda.compose.BadgeSize as ComposeBadgeSize
 import com.gonodono.bda.compose.Corner as ComposeCorner
-import com.gonodono.bda.view.BadgedDrawerArrowDrawable.Animation as DrawableAnimation
+import com.gonodono.bda.compose.Motion as ComposeMotion
 import com.gonodono.bda.view.BadgedDrawerArrowDrawable.BadgeSize as DrawableBadgeSize
 import com.gonodono.bda.view.BadgedDrawerArrowDrawable.Corner as DrawableCorner
+import com.gonodono.bda.view.BadgedDrawerArrowDrawable.Motion as DrawableMotion
 
 class MainActivity : AppCompatActivity() {
 
@@ -65,10 +65,10 @@ class MainActivity : AppCompatActivity() {
         var badgeColor by mutableStateOf(drawable.badgeColor.toComposeColor())
         var badgeCorner by mutableStateOf(drawable.badgeCorner.toComposeCorner())
         var badgeOffset by mutableStateOf(drawable.badgeOffset.toComposeOffset())
-        var badgeClipMargin by mutableStateOf(drawable.badgeClipMargin.toDp())
+        var badgeClipMargin by mutableStateOf(drawable.badgeClipMargin.toDp(this))
         var badgeText by mutableStateOf(drawable.badgeText)
         var badgeTextColor by mutableStateOf(drawable.badgeTextColor.toComposeColor())
-        var badgeAnimation by mutableStateOf(drawable.badgeAnimation.toComposeAnimation())
+        var badgeMotion by mutableStateOf(drawable.badgeMotion.toComposeMotion())
         var scaleState by mutableFloatStateOf(1F)
 
         ui.root.foreground = DividersDrawable(ui.root)
@@ -158,18 +158,18 @@ class MainActivity : AppCompatActivity() {
         ui.badgeClipMargin.apply {
             addOnChangeListener { _, value, _ ->
                 drawable.badgeClipMargin = value
-                badgeClipMargin = value.toDp()
+                badgeClipMargin = value.toDp(context)
             }
         }
 
-        ui.badgeAnimation.apply {
-            adapter = ArrayAdapter(context, simple_spinner_item, Animations)
+        ui.badgeMotion.apply {
+            adapter = ArrayAdapter(context, simple_spinner_item, Motions)
                 .apply { setDropDownViewResource(simple_spinner_dropdown_item) }
             onItemSelectedListener = SelectedListener { position ->
-                drawable.badgeAnimation = Animations[position]
-                badgeAnimation = ComposeAnimations[position]
+                drawable.badgeMotion = Motions[position]
+                badgeMotion = ComposeMotions[position]
             }
-            setSelection(Animations.lastIndex)
+            setSelection(Motions.lastIndex)
         }
 
         ui.badgeColor.apply {
@@ -244,7 +244,7 @@ class MainActivity : AppCompatActivity() {
                         badgeClipMargin = badgeClipMargin,
                         badgeText = badgeText,
                         badgeTextColor = badgeTextColor,
-                        badgeAnimation = badgeAnimation,
+                        badgeMotion = badgeMotion,
                         autoMirrorOnReverse = true,
                         onClick = ::handleClick,
                         modifier = Modifier
@@ -266,8 +266,8 @@ private fun Int.toComposeColor() = ComposeColor(this)
 
 private fun PointF.toComposeOffset() = Offset(x, y)
 
-private fun DrawableAnimation.toComposeAnimation() = ComposeAnimations
-    .getOrElse(Animations.indexOf(this)) { ComposeAnimation.None }
+private fun DrawableMotion.toComposeMotion() = ComposeMotions
+    .getOrElse(Motions.indexOf(this)) { ComposeMotion.None }
 
 private fun BadgedDrawerArrowDrawable.Corner.toComposeCorner() = when (this) {
     DrawableCorner.TopLeft -> ComposeCorner.TopLeft
@@ -276,29 +276,29 @@ private fun BadgedDrawerArrowDrawable.Corner.toComposeCorner() = when (this) {
     DrawableCorner.BottomLeft -> ComposeCorner.BottomLeft
 }
 
-context(Context)
-private fun Float.toDp() = Dp(this / resources.displayMetrics.density)
+private fun Float.toDp(context: Context) =
+    Dp(this / context.resources.displayMetrics.density)
 
-private val Animations = listOf(
-    DrawableAnimation.None,
-    DrawableAnimation.Grow,
-    DrawableAnimation.Shrink,
-    DrawableAnimation.FullSpinCW,
-    DrawableAnimation.FullSpinCCW,
-    DrawableAnimation.HalfSpinCW,
-    DrawableAnimation.HalfSpinCCW,
-    DrawableAnimation.Grow + DrawableAnimation.FullSpinCW,
-    DrawableAnimation.Shrink + DrawableAnimation.HalfSpinCCW
+private val Motions = listOf(
+    DrawableMotion.None,
+    DrawableMotion.Grow,
+    DrawableMotion.Shrink,
+    DrawableMotion.FullSpinCW,
+    DrawableMotion.FullSpinCCW,
+    DrawableMotion.HalfSpinCW,
+    DrawableMotion.HalfSpinCCW,
+    DrawableMotion.Grow + DrawableMotion.FullSpinCW,
+    DrawableMotion.Shrink + DrawableMotion.HalfSpinCCW
 )
 
-private val ComposeAnimations = listOf(
-    ComposeAnimation.None,
-    ComposeAnimation.Grow,
-    ComposeAnimation.Shrink,
-    ComposeAnimation.FullSpinCW,
-    ComposeAnimation.FullSpinCCW,
-    ComposeAnimation.HalfSpinCW,
-    ComposeAnimation.HalfSpinCCW,
-    ComposeAnimation.Grow + ComposeAnimation.FullSpinCW,
-    ComposeAnimation.Shrink + ComposeAnimation.HalfSpinCCW
+private val ComposeMotions = listOf(
+    ComposeMotion.None,
+    ComposeMotion.Grow,
+    ComposeMotion.Shrink,
+    ComposeMotion.FullSpinCW,
+    ComposeMotion.FullSpinCCW,
+    ComposeMotion.HalfSpinCW,
+    ComposeMotion.HalfSpinCCW,
+    ComposeMotion.Grow + ComposeMotion.FullSpinCW,
+    ComposeMotion.Shrink + ComposeMotion.HalfSpinCCW
 )

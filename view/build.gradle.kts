@@ -6,13 +6,12 @@ plugins {
 
 android {
     namespace = "com.gonodono.bda.view"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         minSdk = 21
         consumerProguardFiles("consumer-rules.pro")
     }
-
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -32,6 +31,18 @@ android {
     publishing {
         singleVariant("release")
     }
+    sourceSets {
+        named("main") {
+            java.srcDir("src/main/kotlin")
+        }
+    }
+}
+
+tasks {
+    register<Jar>("withSourcesJar") {
+        archiveClassifier.set("sources")
+        from(android.sourceSets.getByName("main").java.srcDirs)
+    }
 }
 
 afterEvaluate {
@@ -39,6 +50,7 @@ afterEvaluate {
         publications {
             create<MavenPublication>("release") {
                 from(components["release"])
+                artifact(tasks.named<Jar>("withSourcesJar"))
                 groupId = "com.gonodono.bda"
                 artifactId = "view"
                 version = findProperty("library.version").toString()

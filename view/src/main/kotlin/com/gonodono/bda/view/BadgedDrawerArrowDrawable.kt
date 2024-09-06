@@ -13,29 +13,36 @@ import android.graphics.Typeface
 import android.os.Build
 import androidx.annotation.ColorInt
 import androidx.annotation.DoNotInline
+import androidx.annotation.FloatRange
 import androidx.annotation.RequiresApi
 import androidx.appcompat.graphics.drawable.DrawerArrowDrawable
 import androidx.core.graphics.withTranslation
-import kotlin.properties.Delegates
+import kotlin.properties.Delegates.observable
 
 class BadgedDrawerArrowDrawable(context: Context) :
     DrawerArrowDrawable(context) {
 
     var isBadgeEnabled: Boolean by invalidating(false, invalidateClip = true)
 
-    sealed class BadgeSize {
-        data object Standard : BadgeSize()
-        data object Dot : BadgeSize()
-        data class Custom(val size: Float) : BadgeSize()
+    sealed class BadgeSize(internal val get: BadgedDrawerArrowDrawable.() -> Float) {
+        data object Standard : BadgeSize({ 3 * barThickness + 2 * gapSize })
+        data object Dot : BadgeSize({ dotDiameter })
+        data class Custom(val size: Float) : BadgeSize({ size })
     }
 
-    var badgeSize: BadgeSize by invalidating(BadgeSize.Standard, true)
+    var badgeSize: BadgeSize by changeable(BadgeSize.Standard) { size ->
+        badgeDiameter = with(size) { get() }
+        isClipInvalidated = true
+        invalidateSelf()
+    }
 
     @get:ColorInt
     @setparam:ColorInt
     var badgeColor: Int by invalidating(Color.RED)
 
-    enum class Corner { TopLeft, TopRight, BottomRight, BottomLeft }
+    enum class Corner(internal val sx: Int, internal val sy: Int) {
+        TopLeft(-1, -1), TopRight(1, -1), BottomRight(1, 1), BottomLeft(-1, 1)
+    }
 
     var badgeCorner: Corner by invalidating(Corner.TopRight, true)
 
@@ -43,7 +50,9 @@ class BadgedDrawerArrowDrawable(context: Context) :
 
     var badgeClipMargin: Float by invalidating(0F, true)
 
-    var badgeText: String? by invalidating(null)
+    var badgeText: String? by calculating(null)
+
+    var badgeTextSize: (default: Float) -> Float by calculating { it }
 
     @get:ColorInt
     @setparam:ColorInt
@@ -51,33 +60,24 @@ class BadgedDrawerArrowDrawable(context: Context) :
 
     var badgeTextOffset: PointF by invalidating(PointF())
 
-    private fun <T> invalidating(initial: T, invalidateClip: Boolean = false) =
-        Delegates.observable(initial) { _, old, new ->
-            if (old != new) {
-                if (invalidateClip) isClipInvalidated = true
-                invalidateSelf()
-            }
-        }
-
-    sealed class Animation(
+    sealed class Motion(
         internal val endScale: Float? = null,
         internal val endRotation: Float? = null
     ) {
-        data object None : Animation()
-        data object Grow : Animation(1.5F, null)
-        data object Shrink : Animation(0F, null)
-        data object FullSpinCW : Animation(null, 360F)
-        data object FullSpinCCW : Animation(null, -360F)
-        data object HalfSpinCW : Animation(null, 180F)
-        data object HalfSpinCCW : Animation(null, -180F)
+        data object None : Motion()
+        data object Grow : Motion(1.5F, null)
+        data object Shrink : Motion(0F, null)
+        data object FullSpinCW : Motion(null, 360F)
+        data object FullSpinCCW : Motion(null, -360F)
+        data object HalfSpinCW : Motion(null, 180F)
+        data object HalfSpinCCW : Motion(null, -180F)
 
-        operator fun plus(other: Animation): Animation =
-            CombinedAnimation(this, other)
+        operator fun plus(other: Motion): Motion = CombinedMotion(this, other)
 
-        internal class CombinedAnimation(
-            private val first: Animation,
-            private val second: Animation
-        ) : Animation(
+        internal class CombinedMotion(
+            private val first: Motion,
+            private val second: Motion
+        ) : Motion(
             second.endScale ?: first.endScale,
             second.endRotation ?: first.endRotation
         ) {
@@ -93,28 +93,31 @@ class BadgedDrawerArrowDrawable(context: Context) :
             }
         }
 
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is Motion) return false
+            if (endScale != other.endScale) return false
+            return endRotation == other.endRotation
+        }
+
+        override fun hashCode(): Int {
+            var result = endScale?.hashCode() ?: 0
+            result = 31 * result + (endRotation?.hashCode() ?: 0)
+            return result
+        }
+
         internal open val ss: String? get() = toString()
         internal open val rs: String? get() = toString()
     }
 
-    var badgeAnimation: Animation = Animation.None
-        set(value) {
-            if (field == value) return
-            field = value
-            calculateAnimation(progress)
-        }
+    var badgeMotion: Motion by changeable(Motion.None) {
+        applyMotion(progress)
+    }
 
     var autoMirrorOnReverse: Boolean = false
 
-    // This is figured at init so that we don't have to hang on the the Context.
-    private val dotDiameter = DOT_DP * context.resources.displayMetrics.density
-
-    val badgeDiameter: Float
-        get() = when (val mode = badgeSize) {
-            BadgeSize.Standard -> 3 * barThickness + 2 * gapSize
-            BadgeSize.Dot -> dotDiameter
-            is BadgeSize.Custom -> mode.size
-        }
+    var badgeDiameter: Float = with(badgeSize) { get() }
+        private set
 
     override fun onBoundsChange(bounds: Rect) {
         super.onBoundsChange(bounds)
@@ -136,14 +139,10 @@ class BadgedDrawerArrowDrawable(context: Context) :
     }
 
     override fun draw(canvas: Canvas) {
-        val centerX = bounds.centerX() + when (badgeCorner) {
-            Corner.TopLeft, Corner.BottomLeft -> -barLength / 2F
-            else -> barLength / 2F
-        } + badgeOffset.x
-        val centerY = bounds.centerY() + when (badgeCorner) {
-            Corner.TopLeft, Corner.TopRight -> -(1.5F * barThickness + gapSize)
-            else -> 1.5F * barThickness + gapSize
-        } + badgeOffset.y
+        val bx = (barLength / 2F) * badgeCorner.sx
+        val centerX = bounds.centerX() + bx + badgeOffset.x
+        val by = (1.5F * barThickness + gapSize) * badgeCorner.sy
+        val centerY = bounds.centerY() + by + badgeOffset.y
         val radius = badgeDiameter / 2F
 
         // The super class doesn't handle its vertical bounds correctly, so we
@@ -159,7 +158,7 @@ class BadgedDrawerArrowDrawable(context: Context) :
                 }
             }
         }
-        if (isBadgeEnabled) drawBadge(canvas, paint, centerX, centerY, radius)
+        if (isBadgeEnabled) drawBadge(canvas, centerX, centerY, radius)
     }
 
     private var clipPath: Path? = null
@@ -171,28 +170,41 @@ class BadgedDrawerArrowDrawable(context: Context) :
         centerY: Float,
         radius: Float
     ): Path? {
-        val path = when {
-            isBadgeEnabled && badgeClipMargin > 0F -> {
-                val path = clipPath ?: Path()
-                when {
-                    isClipInvalidated -> path.apply {
-                        rewind()
-                        val y = centerY - bounds.top  // 'cause of bug in super.
-                        val scaledRadius = (radius + badgeClipMargin) * scale
-                        addCircle(centerX, y, scaledRadius, Path.Direction.CW)
-                        isClipInvalidated = false
-                    }
-                    else -> path
-                }
-            }
-            else -> null
+        if (!isBadgeEnabled || badgeClipMargin <= 0F) {
+            clipPath = null
+            return null
         }
-        return path.also { clipPath = it }
+
+        val path = clipPath?.apply { if (!isClipInvalidated) return this }
+            ?: Path().also { clipPath = it }
+
+        path.rewind()
+        val offsetY = centerY - bounds.top  // 'cause of the bug in super.
+        val scaledRadius = (radius + badgeClipMargin) * scale
+        path.addCircle(centerX, offsetY, scaledRadius, Path.Direction.CW)
+        isClipInvalidated = false
+        return path
+    }
+
+    private val textBounds = Rect()
+
+    // A Bitmap cache for the text draw seems more efficient, but I've not
+    // yet managed an acceptable result, due to the small text sizes, tiny draw
+    // area, and the possible states. The text's measure is cached, at least.
+    private fun calculateTextBounds(text: String?) {
+        when {
+            text.isNullOrBlank() -> textBounds.setEmpty()
+            else -> {
+                val default = badgeDiameter * textSizeFactor(text.length)
+                paint.textSize = badgeTextSize(default)
+                paint.getTextBounds(text, 0, text.length, textBounds)
+            }
+        }
+        invalidateSelf()
     }
 
     private fun drawBadge(
         canvas: Canvas,
-        paint: Paint,
         centerX: Float,
         centerY: Float,
         radius: Float
@@ -203,22 +215,15 @@ class BadgedDrawerArrowDrawable(context: Context) :
         if (badgeSize == BadgeSize.Dot) return
         val text = badgeText.takeIf { !it.isNullOrBlank() } ?: return
 
-        val count = canvas.save()
+        paint.color = badgeTextColor
+        val x = centerX - textBounds.exactCenterX() + badgeTextOffset.x
+        val y = centerY - textBounds.exactCenterY() + badgeTextOffset.y
+
+        canvas.save()
         canvas.rotate(rotation, centerX, centerY)
         canvas.scale(scale, scale, centerX, centerY)
-
-        val textBounds = tmpRect
-        paint.textSize = badgeDiameter * textSizeFactor(text.length)
-        paint.getTextBounds(text, 0, text.length, textBounds)
-
-        val textX = centerX - textBounds.width() / 2F - 1
-        val textY = centerY + textBounds.height() / 2F - 1
-        val offsetX = textX + badgeTextOffset.x
-        val offsetY = textY + badgeTextOffset.y
-        paint.color = badgeTextColor
-        canvas.drawText(text, offsetX, offsetY, paint)
-
-        canvas.restoreToCount(count)
+        canvas.drawText(text, x, y, paint)
+        canvas.restore()
     }
 
     private var scale = 1F
@@ -232,8 +237,8 @@ class BadgedDrawerArrowDrawable(context: Context) :
             1F -> setVerticalMirror(true)
             0F -> setVerticalMirror(false)
         }
+        if (this.progress != progress) applyMotion(progress)
         super.setProgress(progress)
-        calculateAnimation(progress)
     }
 
     override fun setVerticalMirror(verticalMirror: Boolean) {
@@ -241,12 +246,12 @@ class BadgedDrawerArrowDrawable(context: Context) :
         this.verticalMirror = verticalMirror
     }
 
-    private fun calculateAnimation(progress: Float) {
-        val newScale = when (val end = badgeAnimation.endScale) {
+    private fun applyMotion(progress: Float) {
+        val newScale = when (val end = badgeMotion.endScale) {
             null -> 1F
             else -> lerp(1F, end, progress)
         }
-        val newRotation = when (val end = badgeAnimation.endRotation) {
+        val newRotation = when (val end = badgeMotion.endRotation) {
             null -> 0F
             else -> lerp(0F, end, progress) * if (verticalMirror) -1 else 1
         }
@@ -260,19 +265,28 @@ class BadgedDrawerArrowDrawable(context: Context) :
 
         private const val DOT_DP = 8
 
+        // Fraction of the badge's diameter that is used for the default size.
         // This really only handles lengths of 1, 2, or 3. Tweak as needed.
+        @FloatRange(0.0, 1.0)
         private fun textSizeFactor(textLength: Int): Float =
             when (textLength) {
                 1 -> 0.75F
                 2 -> 0.6F
                 else -> 0.5F
             }
-
-        private fun lerp(start: Float, end: Float, fraction: Float): Float =
-            (1F - fraction) * start + fraction * end
     }
 
-    private val tmpRect = Rect()
+    // This is figured at init so that we don't have to hang on the the Context.
+    private val dotDiameter = DOT_DP * context.resources.displayMetrics.density
+
+    private fun <T> invalidating(initial: T, invalidateClip: Boolean = false) =
+        changeable(initial) {
+            if (invalidateClip) isClipInvalidated = true
+            invalidateSelf()
+        }
+
+    private fun <T> calculating(initial: T) =
+        changeable(initial) { calculateTextBounds(badgeText) }
 }
 
 private fun clipOutPath(canvas: Canvas, path: Path) {
@@ -291,3 +305,11 @@ private object CanvasVerificationHelper {
         canvas.clipOutPath(path)
     }
 }
+
+private fun lerp(start: Float, end: Float, fraction: Float): Float =
+    (1F - fraction) * start + fraction * end
+
+private inline fun <T> changeable(
+    initial: T,
+    crossinline onChange: (T) -> Unit
+) = observable(initial) { _, old, new -> if (old != new) onChange(new) }

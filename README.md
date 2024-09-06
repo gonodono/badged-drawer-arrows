@@ -6,7 +6,7 @@ extended to add a badge with various features.
 <p align="center">
 <img src="images/examples.png"
 alt="Examples of various setups."
-width="30%" />
+width="40%" />
 </p>
 
 A Compose version is also included. It simply wraps the custom drawable in an
@@ -25,7 +25,8 @@ if the existing implementation happens to suit your needs.
     - [Using the support `ActionBar`](#using-the-support-actionbar)
     - [Using a `Toolbar` directly](#using-a-toolbar-directly)
   - [Compose](#compose)
-    - [Quick and easy drawer setup](#quick-and-easy-drawer-setup)
+    - [Automatic toggle setup](#automatic-toggle-setup)
+    - [Manual toggle setup](#manual-toggle-setup)
     - [Manual drawer setup](#manual-drawer-setup)
 - [Notes](#notes)
 
@@ -38,25 +39,27 @@ This table briefly summarizes the new features added to
 [`BadgedDrawerArrowDrawable`][BadgedDrawerArrowDrawable], and therefore also to
 Compose's [`BadgedDrawerArrow`][BadgedDrawerArrow].
 
-| Property              | Type              | Description                                 |
-| --------------------- | ----------------- | ------------------------------------------- |
-| `isBadgeEnabled`      | `Boolean`         | Whether a badge is drawn.                   |
-| `badgeSize`           | `BadgeSize`       | Options for the badge's size.               |
-| `badgeColor`          | `Int`/`Color`     | Color of the badge's background.            |
-| `badgeCorner`         | `Corner`          | Which corner to center the badge on.        |
-| `badgeOffset`         | `PointF`/`Offset` | For minor adjustments to badge placement.   |
-| `badgeClipMargin`     | `Float`           | Margin clipped out of the base drawable.    |
-| `badgeText`           | `String`          | (Optional) text to be drawn on the badge.   |
-| `badgeTextColor`      | `Int`/`Color`     | Color of the badge's text, if any.          |
-| `badgeTextOffset`     | `PointF`/`Offset` | For minor adjustments to text placement.    |
-| `badgeAnimation`      | `Animation`       | (Optional) animation to apply to the badge. |
-| `autoMirrorOnReverse` | `Boolean`         | Whether to mimic `ActionBarDrawerToggle`.   |
+| Property              | Type               | Description                                 |
+| --------------------- | ------------------ | ------------------------------------------- |
+| `isBadgeEnabled`      | `Boolean`          | Whether a badge is drawn.                   |
+| `badgeSize`           | `BadgeSize`        | Options for the badge's size.               |
+| `badgeColor`          | `Int`/`Color`      | Color of the badge's background.            |
+| `badgeCorner`         | `Corner`           | Corner of hamburger to center the badge on. |
+| `badgeOffset`         | `PointF`/`Offset`  | For minor adjustments to badge placement.   |
+| `badgeClipMargin`     | `Float`            | Margin clipped out of the base drawable.    |
+| `badgeText`           | `String`           | (Optional) text to be drawn on the badge.   |
+| `badgeTextSize`       | `(Float) -> Float` | Allows adjustments to the default size.     |
+| `badgeTextColor`      | `Int`/`Color`      | Color of the badge's text, if any.          |
+| `badgeTextOffset`     | `PointF`/`Offset`  | For minor adjustments to text placement.    |
+| `badgeMotion`         | `Motion`           | (Optional) animation to apply to the badge. |
+| `autoMirrorOnReverse` | `Boolean`          | Whether to mimic `ActionBarDrawerToggle`.   |
 
-`ActionBarDrawerToggle` calls [`setVerticalMirror()`][setVerticalMirror] on its
-`DrawerArrowDrawable` when its position value hits `0F` and `1F`, causing it to
-rotate in the same direction when the drawer closes as when it opens. That's
-what the `autoMirrorOnReverse` property does: tells the drawable to handle this
-automatically without being attached to an `ActionBarDrawerToggle`.
+`ActionBarDrawerToggle` calls [`setVerticalMirror(Boolean)`][setVerticalMirror]
+on its `DrawerArrowDrawable` at positions `0F` and `1F` with alternating values,
+causing it to rotate in the same direction when the drawer closes as when it
+opens. That's what the `autoMirrorOnReverse` property does: tells the drawable
+to handle this automatically without being attached to an
+`ActionBarDrawerToggle`.
 
 ## Usage
 
@@ -74,15 +77,18 @@ each, code-wise.
 
 #### Using the support `ActionBar`
 
+<details>
+    <summary><tt>ActionBarActivity</tt></summary>
+
 ```kotlin
-class ExampleActivity : AppCompatActivity() {
+class ActionBarActivity : AppCompatActivity() {
 
     private lateinit var toggle: ActionBarDrawerToggle
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val ui = ActivityExampleBinding.inflate(layoutInflater)
+        val ui = ActivityActionBarBinding.inflate(layoutInflater)
         setContentView(ui.root)
 
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
@@ -93,25 +99,30 @@ class ExampleActivity : AppCompatActivity() {
             R.string.opened,
             R.string.closed
         )
+
+        val context = supportActionBar?.themedContext ?: this
         toggle.drawerArrowDrawable =
-            BadgedDrawerArrowDrawable(this).apply {
+            BadgedDrawerArrowDrawable(context).apply {
                 isBadgeEnabled = true
                 badgeText = "99+"
             }
-        ui.drawerLayout.addDrawerListener(toggle)
-    }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if (toggle.onOptionsItemSelected(item)) return true
-        return super.onOptionsItemSelected(item)
+        ui.drawerLayout.addDrawerListener(toggle)
     }
 
     override fun onPostResume() {
         super.onPostResume()
         toggle.syncState()
     }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        if (toggle.onOptionsItemSelected(item)) return true
+        return super.onOptionsItemSelected(item)
+    }
 }
 ```
+
+</details>
 
 That snippet assumes that your theme is supplying the `ActionBar`; i.e., it's
 not a `NoActionBar` theme. If you're supplying your own `Toolbar` for the
@@ -123,15 +134,18 @@ separately.
 
 #### Using a `Toolbar` directly
 
+<details>
+    <summary><tt>ToolbarActivity</tt></summary>
+
 ```kotlin
-class ExampleActivity : AppCompatActivity() {
+class ToolbarActivity : AppCompatActivity() {
 
     private lateinit var toggle: ActionBarDrawerToggle
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val ui = ActivityExampleBinding.inflate(layoutInflater)
+        val ui = ActivityToolbarBinding.inflate(layoutInflater)
         setContentView(ui.root)
 
         toggle = ActionBarDrawerToggle(
@@ -141,11 +155,13 @@ class ExampleActivity : AppCompatActivity() {
             R.string.opened,
             R.string.closed
         )
+
         toggle.drawerArrowDrawable =
-            BadgedDrawerArrowDrawable(this).apply {
+            BadgedDrawerArrowDrawable(ui.toolbar.context).apply {
                 isBadgeEnabled = true
                 badgeText = "99+"
             }
+
         ui.drawerLayout.addDrawerListener(toggle)
     }
 
@@ -155,6 +171,8 @@ class ExampleActivity : AppCompatActivity() {
     }
 }
 ```
+
+</details>
 
 ### Compose
 
@@ -179,29 +197,32 @@ you don't even have to worry about that for basic usage.
 
 `BadgedDrawerArrow` also works well with Compose's animations, like
 `animateFloatAsState()`, though it's obviously geared toward use with a drawer.
-To that end, there's an overload that takes a `DrawerState`, sets
-`autoMirrorOnReverse` to `true` by default, and automatically toggles the drawer
-upon clicking, which makes for a quick and easy drawer setup.
+To that end, there's an overload that takes an instance of a helper class,
+`DrawerToggle`, that exposes and manages a `DrawerState` and its relative
+progress. That overload also sets `autoMirrorOnReverse` to `true` by default,
+and automatically toggles the drawer upon clicking, which makes for a quick and
+easy drawer setup.
 
-#### Quick and easy drawer setup
+#### Automatic toggle setup
+
+<details>
+    <summary><tt>AutomaticToggleExample()</tt></summary>
 
 ```kotlin
+private val DrawerWidth = 240.dp
+
 @Preview(showBackground = true)
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MinimalDrawerExample() {
-    val drawerState = rememberDrawerState(DrawerValue.Closed)
+fun AutomaticToggleExample() {
+    val drawerToggle = rememberDrawerToggle(DrawerWidth, DrawerValue.Open)
     Column {
-        TopAppBar(
-            title = { Text("Example") },
-            navigationIcon = { BadgedDrawerArrow(drawerState) }
-        )
+        BadgedDrawerArrow(drawerToggle)
         ModalNavigationDrawer(
-            drawerState = drawerState,
+            drawerState = drawerToggle.drawerState,
             drawerContent = {
                 Box(
                     Modifier
-                        .width(240.dp)
+                        .width(DrawerWidth)
                         .fillMaxHeight()
                         .background(Color.Blue)
                 )
@@ -210,34 +231,36 @@ fun MinimalDrawerExample() {
     }
 }
 ```
+
+</details>
 
 This version doesn't offer an `onClick` parameter, however, so if you need to
 perform additional work for clicks, you'll have to set up the toggle manually.
 
-#### Manual drawer setup
+#### Manual toggle setup
+
+<details>
+    <summary><tt>ManualToggleExample()</tt></summary>
 
 ```kotlin
+private val DrawerWidth = 240.dp
+
 @Preview(showBackground = true)
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MinimalDrawerExample() {
-    val scope = rememberCoroutineScope()
-    val drawerState = rememberDrawerState(DrawerValue.Closed)
+fun ManualToggleExample() {
+    val drawerToggle = rememberDrawerToggle(DrawerWidth)
     Column {
-        TopAppBar(
-            title = { Text("Example") },
-            navigationIcon = {
-                BadgedDrawerArrow(progress = drawerState.progress()) {
-                    scope.launch { drawerState.toggle() }
-                }
-            }
+        BadgedDrawerArrow(
+            autoMirrorOnReverse = true,
+            progress = drawerToggle.progress(),
+            onClick = { drawerToggle.toggle(); /* Other things… */ }
         )
         ModalNavigationDrawer(
-            drawerState = drawerState,
+            drawerState = drawerToggle.drawerState,
             drawerContent = {
                 Box(
                     Modifier
-                        .width(240.dp)
+                        .width(DrawerWidth)
                         .fillMaxHeight()
                         .background(Color.Blue)
                 )
@@ -247,26 +270,80 @@ fun MinimalDrawerExample() {
 }
 ```
 
+</details>
+
+If you wanna skip the `DrawerToggle` altogether, for whatever reason, it's only
+a few more lines to provide the parts yourself.
+
+#### Manual drawer setup
+
+<details>
+    <summary><tt>ManualDrawerExample()</tt></summary>
+
+```kotlin
+private val DrawerWidth = 240.dp
+
+@Preview(showBackground = true)
+@Composable
+fun ManualDrawerExample() {
+    val scope = rememberCoroutineScope()
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    Column {
+        BadgedDrawerArrow(
+            autoMirrorOnReverse = true,
+            progress = drawerState.progress(DrawerWidth),
+            onClick = { scope.launch { drawerState.toggle() } }
+        )
+        ModalNavigationDrawer(
+            drawerState = drawerState,
+            drawerContent = {
+                Box(
+                    Modifier
+                        .width(DrawerWidth)
+                        .fillMaxHeight()
+                        .background(Color.Blue)
+                )
+            }
+        ) {}
+    }
+}
+```
+
+</details>
+
 The `DrawerState.progress()` and `DrawerState.toggle()` extensions are public in
-the Composables' file. The progress is calculated using a constant from the
-Compose framework, `NavigationDrawerContainerWidth`, which of course is not
-public, so a copy is included in that file too, just in case you need it for
-your own figures.
+the Composables' file.
 
 ## Notes
 
-- **NB:** There appears to be a bug in Kotlin/Compose Compiler 2.0.20, as
-  upgrading to that version seems to break `BadgedDrawerArrow` partially. It's
-  still somehow updating correctly behind the scenes, but it looks like the
-  hosting `View` isn't being invalidated correctly, 'cause manually invalidating
-  it brings it up to date.
+- The main caveat currently is that there are basically no restrictions or
+  checks or coercions on input. For example, the badge is designed to show
+  numbers of length 0..3 relatively comfortably, but it does not prevent you
+  from entering values outside of those bounds, and neither does it do anything
+  to "correct" an out-of-bounds value before application. Checks may be added in
+  the future, but for now, it's up to the user to ensure workable input for the
+  desired results.
+
+- The text layout is geared toward number glyphs. That is, the default text
+  sizes were calculated to work well with any number of length 1..3, but a
+  string of "MMM", for example, would end up being wider than the badge. If
+  needed, the `badgeTextSize` property and parameter are
+  `(default: Float) -> Float` functions to allow adjustments.
+
+- The Compose version doesn't work entirely correctly with the `@Preview`
+  functionality at the moment. Interactive mode seems to work just fine, but for
+  some reason that I've not yet deduced, the underlying `DrawerArrowDrawable`
+  doesn't draw in some static setups.
 
 - Letters and numbers are not regular shapes, obviously, which makes it
   difficult to center them visually, especially in arbitrary combinations.
   Therefore, the current algorithm simply centers them according to their
-  enclosing bounds, which is technically correct, but prone to certain strings
-  looking very wrong. The `badgeTextOffset` property/parameter is available to
-  fiddle with that placement, if needed.
+  enclosing bounds, which is technically correct, but prone to causing certain
+  strings looking very wrong. The `badgeTextOffset` property/parameter is
+  available to fiddle with the text placement, if needed.
+
+- This project is currently considered examples more than an official library.
+  As such, things may break without prior warning or deprecation.
 
 - There are no code docs yet, unfortunately. They will be added eventually, but
   I'm sure you can figure things out in the meantime.
@@ -305,13 +382,12 @@ COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-
-  [DrawerArrowDrawable]: https://developer.android.com/reference/kotlin/androidx/appcompat/graphics/drawable/DrawerArrowDrawable
-
-  [JitPack]: https://jitpack.io/#gonodono/badged-drawer-arrows
-
-  [BadgedDrawerArrowDrawable]: https://github.com/gonodono/badged-drawer-arrows/tree/main/view/src/main/kotlin/com/gonodono/bda/view/BadgedDrawerArrowDrawable.kt
-
-  [BadgedDrawerArrow]: https://github.com/gonodono/badged-drawer-arrows/tree/main/compose/src/main/kotlin/com/gonodono/bda/compose/BadgedDrawerArrow.kt
-
-  [setVerticalMirror]: https://developer.android.com/reference/kotlin/androidx/appcompat/graphics/drawable/DrawerArrowDrawable#setVerticalMirror(boolean)
+[DrawerArrowDrawable]:
+  https://developer.android.com/reference/kotlin/androidx/appcompat/graphics/drawable/DrawerArrowDrawable
+[JitPack]: https://jitpack.io/#gonodono/badged-drawer-arrows
+[BadgedDrawerArrowDrawable]:
+  https://github.com/gonodono/badged-drawer-arrows/tree/main/view/src/main/kotlin/com/gonodono/bda/view/BadgedDrawerArrowDrawable.kt
+[BadgedDrawerArrow]:
+  https://github.com/gonodono/badged-drawer-arrows/tree/main/compose/src/main/kotlin/com/gonodono/bda/compose/BadgedDrawerArrow.kt
+[setVerticalMirror]:
+  https://developer.android.com/reference/kotlin/androidx/appcompat/graphics/drawable/DrawerArrowDrawable#setVerticalMirror(boolean)

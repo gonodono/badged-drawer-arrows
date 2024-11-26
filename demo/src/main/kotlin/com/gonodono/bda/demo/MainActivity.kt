@@ -31,10 +31,12 @@ import com.gonodono.bda.compose.BadgedDrawerArrow
 import com.gonodono.bda.demo.databinding.ActivityMainBinding
 import com.gonodono.bda.demo.internal.DividersDrawable
 import com.gonodono.bda.demo.internal.SelectedListener
+import com.gonodono.bda.demo.internal.Showcase
 import com.gonodono.bda.demo.internal.getThemeColor
 import com.gonodono.bda.demo.internal.setSwatchColor
 import com.gonodono.bda.demo.internal.showColorDialog
 import com.gonodono.bda.view.BadgedDrawerArrowDrawable
+import com.gonodono.bda.view.plus
 import androidx.compose.ui.graphics.Color as ComposeColor
 import com.gonodono.bda.compose.BadgeSize as ComposeBadgeSize
 import com.gonodono.bda.compose.Corner as ComposeCorner
@@ -55,6 +57,7 @@ class MainActivity : AppCompatActivity() {
             isBadgeEnabled = true
             badgeClipMargin = 6F
             badgeText = "99+"
+
             // Causes it to mimic ActionBarDrawerToggle's anim w/o being in one.
             autoMirrorOnReverse = true
         }
@@ -76,9 +79,10 @@ class MainActivity : AppCompatActivity() {
         // Setup is grouped and ordered the same as the layout, top to bottom.
 
         ui.groupFramework.setOnCheckedChangeListener { _, checkedId ->
-            ui.dualPane.displayedChild = when (checkedId) {
-                ui.radioCompose.id -> ui.dualPane.indexOfChild(ui.composeView)
-                else -> ui.dualPane.indexOfChild(ui.viewContainer)
+            ui.dualPane.displayedChild = if (checkedId == ui.radioCompose.id) {
+                ui.dualPane.indexOfChild(ui.composeView)
+            } else {
+                ui.dualPane.indexOfChild(ui.viewContainer)
             }
         }
 
@@ -89,13 +93,12 @@ class MainActivity : AppCompatActivity() {
             ui.labelIsDot.isEnabled = isChecked
         }
         ui.isDot.setOnCheckedChangeListener { _, isChecked ->
-            drawable.badgeSize = when {
-                isChecked -> DrawableBadgeSize.Dot
-                else -> DrawableBadgeSize.Standard
-            }
-            badgeSize = when {
-                isChecked -> ComposeBadgeSize.Dot
-                else -> ComposeBadgeSize.Standard
+            if (isChecked) {
+                drawable.badgeSize = DrawableBadgeSize.Dot
+                badgeSize = ComposeBadgeSize.Dot
+            } else {
+                drawable.badgeSize = DrawableBadgeSize.Normal
+                badgeSize = ComposeBadgeSize.Normal
             }
         }
         ui.badgeText.doOnTextChanged { text, _, _, _ ->
@@ -103,23 +106,35 @@ class MainActivity : AppCompatActivity() {
             badgeText = text.toString()
         }
 
+        // Simple View showcase in lieu of a Toast or Snackbar or Dialog.
+        var showcase: Showcase? = null
+
         // Cheap and easy animation. Not concerned with correctness.
         val animator = ValueAnimator()
         animator.addUpdateListener {
             ui.progress.value = it.animatedValue as Float
         }
+
         fun handleClick() {
+            // Showcase runs handleClick() when it's done, so return here.
+            showcase?.run { dispose(); showcase = null; return }
+
             animator.cancel()
-            when (drawable.progress) {
-                0F -> animator.setObjectValues(0F, 1F)
-                else -> animator.setObjectValues(1F, 0F)
+            if (drawable.progress == 0F) {
+                animator.setObjectValues(0F, 1F)
+            } else {
+                animator.setObjectValues(1F, 0F)
             }
             animator.start()
         }
         ui.view.apply {
             setOnClickListener { handleClick() }
-            // The overlay doesn't mess with bounds, like e.g. the background.
+
+            // Using the overlay because it alter bounds, which are set below.
             overlay.add(drawable)
+        }
+        if (savedInstanceState == null && Showcase.checkShow(this)) {
+            showcase = Showcase(this, ui.view, 25, "Click it!", ::handleClick)
         }
 
         ui.progress.addOnChangeListener { _, value, _ ->
@@ -128,8 +143,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         // badgeOffset is for tweaking the badge placement, if it's not exactly
-        // where you'd like it. It is a raw offset, to keep things simple, and
-        // it's up to the user to figure out the appropriate values.
+        // where you'd like it. It's a raw pixel offset, to keep things simple,
+        // and it is up to the user to figure out the appropriate values.
         fun updateOffset() {
             val value = ui.badgeOffset.value
             val offset = when (drawable.badgeCorner) {
@@ -204,14 +219,10 @@ class MainActivity : AppCompatActivity() {
                 setBounds(x, y, x + intrinsicWidth, y + intrinsicHeight)
                 invalidateSelf()
             }
+
             // DrawerArrowDrawable does not scale to its bounds, so both the
             // View and the Composable are scaled up to show the details.
-            val maxWidth = r - l
-            val maxHeight = b - t
-            val scale = 0.6F * when {
-                maxWidth > maxHeight -> maxHeight / elementSize
-                else -> maxWidth / elementSize
-            }
+            val scale = 0.6F * minOf(r - l, b - t) / elementSize
             scaleState = scale
             ui.view.scaleX = scale; ui.view.scaleY = scale
             val scaledSize = (elementSize * scale).toInt()
@@ -258,16 +269,17 @@ class MainActivity : AppCompatActivity() {
 }
 
 private fun DrawableBadgeSize.toComposeBadgeSize() = when (this) {
-    is DrawableBadgeSize.Dot -> ComposeBadgeSize.Dot
-    else -> ComposeBadgeSize.Standard
+    DrawableBadgeSize.Normal -> ComposeBadgeSize.Normal
+    DrawableBadgeSize.Dot -> ComposeBadgeSize.Dot
+    is DrawableBadgeSize.Custom -> ComposeBadgeSize.Custom(diameter)
 }
 
 private fun Int.toComposeColor() = ComposeColor(this)
 
 private fun PointF.toComposeOffset() = Offset(x, y)
 
-private fun DrawableMotion.toComposeMotion() = ComposeMotions
-    .getOrElse(Motions.indexOf(this)) { ComposeMotion.None }
+private fun DrawableMotion.toComposeMotion() =
+    ComposeMotions.getOrElse(Motions.indexOf(this)) { ComposeMotion.None }
 
 private fun BadgedDrawerArrowDrawable.Corner.toComposeCorner() = when (this) {
     DrawableCorner.TopLeft -> ComposeCorner.TopLeft

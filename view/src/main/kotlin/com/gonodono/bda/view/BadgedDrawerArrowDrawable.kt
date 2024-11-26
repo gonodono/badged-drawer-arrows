@@ -17,6 +17,7 @@ import androidx.annotation.FloatRange
 import androidx.annotation.RequiresApi
 import androidx.appcompat.graphics.drawable.DrawerArrowDrawable
 import androidx.core.graphics.withTranslation
+import com.gonodono.bda.view.BadgedDrawerArrowDrawable.Motion
 import kotlin.properties.Delegates.observable
 
 class BadgedDrawerArrowDrawable(context: Context) :
@@ -25,12 +26,12 @@ class BadgedDrawerArrowDrawable(context: Context) :
     var isBadgeEnabled: Boolean by invalidating(false, invalidateClip = true)
 
     sealed class BadgeSize(internal val get: BadgedDrawerArrowDrawable.() -> Float) {
-        data object Standard : BadgeSize({ 3 * barThickness + 2 * gapSize })
+        data object Normal : BadgeSize({ 3 * barThickness + 2 * gapSize })
         data object Dot : BadgeSize({ dotDiameter })
-        data class Custom(val size: Float) : BadgeSize({ size })
+        data class Custom(val diameter: Float) : BadgeSize({ diameter })
     }
 
-    var badgeSize: BadgeSize by changeable(BadgeSize.Standard) { size ->
+    var badgeSize: BadgeSize by changeable(BadgeSize.Normal) { size ->
         badgeDiameter = with(size) { get() }
         isClipInvalidated = true
         invalidateSelf()
@@ -71,27 +72,6 @@ class BadgedDrawerArrowDrawable(context: Context) :
         data object FullSpinCCW : Motion(null, -360F)
         data object HalfSpinCW : Motion(null, 180F)
         data object HalfSpinCCW : Motion(null, -180F)
-
-        operator fun plus(other: Motion): Motion = CombinedMotion(this, other)
-
-        internal class CombinedMotion(
-            private val first: Motion,
-            private val second: Motion
-        ) : Motion(
-            second.endScale ?: first.endScale,
-            second.endRotation ?: first.endRotation
-        ) {
-            override val ss: String?
-                get() = second.run { endScale?.let { ss } } ?: first.ss
-            override val rs: String?
-                get() = second.run { endRotation?.let { rs } } ?: first.rs
-
-            override fun toString(): String = buildString {
-                ss?.let { append(it) }
-                if (ss != null && rs != null) append("+")
-                rs?.let { append(it) }
-            }
-        }
 
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
@@ -148,14 +128,14 @@ class BadgedDrawerArrowDrawable(context: Context) :
         // The super class doesn't handle its vertical bounds correctly, so we
         // translate the super draw here, and offset the clip by the same below.
         canvas.withTranslation(0F, bounds.top.toFloat()) {
-            when (val clip = calculateClipPath(centerX, centerY, radius)) {
-                null -> super.draw(canvas)
-                else -> {
-                    val count = canvas.save()
-                    clipOutPath(canvas, clip)
-                    super.draw(canvas)
-                    canvas.restoreToCount(count)
-                }
+            val clip = calculateClipPath(centerX, centerY, radius)
+            if (clip != null) {
+                val count = canvas.save()
+                clipOutPath(canvas, clip)
+                super.draw(canvas)
+                canvas.restoreToCount(count)
+            } else {
+                super.draw(canvas)
             }
         }
         if (isBadgeEnabled) drawBadge(canvas, centerX, centerY, radius)
@@ -175,11 +155,11 @@ class BadgedDrawerArrowDrawable(context: Context) :
             return null
         }
 
-        val path = clipPath?.apply { if (!isClipInvalidated) return this }
+        val path = clipPath?.also { if (!isClipInvalidated) return it }
             ?: Path().also { clipPath = it }
 
         path.rewind()
-        val offsetY = centerY - bounds.top  // 'cause of the bug in super.
+        val offsetY = centerY - bounds.top  // <- 'cause of the bug in super.
         val scaledRadius = (radius + badgeClipMargin) * scale
         path.addCircle(centerX, offsetY, scaledRadius, Path.Direction.CW)
         isClipInvalidated = false
@@ -188,17 +168,17 @@ class BadgedDrawerArrowDrawable(context: Context) :
 
     private val textBounds = Rect()
 
-    // A Bitmap cache for the text draw seems more efficient, but I've not
-    // yet managed an acceptable result, due to the small text sizes, tiny draw
-    // area, and the possible states. The text's measure is cached, at least.
+    // A Bitmap cache for the draw might seem more efficient, but it's unlikely
+    // that the benefits, if any, would outweigh the extra code and overhead
+    // necessary. The measure is cached, at least. This approach also means that
+    // text scaling is handled automatically, as shown in the demo app's setup.
     private fun calculateTextBounds(text: String?) {
-        when {
-            text.isNullOrBlank() -> textBounds.setEmpty()
-            else -> {
-                val default = badgeDiameter * textSizeFactor(text.length)
-                paint.textSize = badgeTextSize(default)
-                paint.getTextBounds(text, 0, text.length, textBounds)
-            }
+        if (text.isNullOrBlank()) {
+            textBounds.setEmpty()
+        } else {
+            val default = badgeDiameter * textSizeFactor(text.length)
+            paint.textSize = badgeTextSize(default)
+            paint.getTextBounds(text, 0, text.length, textBounds)
         }
         invalidateSelf()
     }
@@ -263,10 +243,18 @@ class BadgedDrawerArrowDrawable(context: Context) :
 
     companion object {
 
-        private const val DOT_DP = 8
+        const val DOT_DIAMETER_DP = 8
 
-        // Fraction of the badge's diameter that is used for the default size.
-        // This really only handles lengths of 1, 2, or 3. Tweak as needed.
+        const val DEFAULT_BAR_LENGTH_DP = 18
+        const val DEFAULT_BAR_THICKNESS_DP = 2
+        const val DEFAULT_BAR_GAP_SIZE_DP = 3
+        const val DEFAULT_ARROW_SHAFT_LENGTH_DP = 16
+        const val DEFAULT_ARROW_HEAD_LENGTH_DP = 8
+
+        // Fraction of the badge's diameter that is used for the default text
+        // size. This really only handles numbers of lengths of 1..3; alter as
+        // needed. The `badgeTextSize: (Float) -> Float` property is available
+        // to tweak the size at runtime, if necessary.
         @FloatRange(0.0, 1.0)
         private fun textSizeFactor(textLength: Int): Float =
             when (textLength) {
@@ -276,8 +264,9 @@ class BadgedDrawerArrowDrawable(context: Context) :
             }
     }
 
-    // This is figured at init so that we don't have to hang on the the Context.
-    private val dotDiameter = DOT_DP * context.resources.displayMetrics.density
+    // This is figured at init so we don't have to hang onto the Context.
+    private val dotDiameter =
+        DOT_DIAMETER_DP * context.resources.displayMetrics.density
 
     private fun <T> invalidating(initial: T, invalidateClip: Boolean = false) =
         changeable(initial) {
@@ -288,6 +277,33 @@ class BadgedDrawerArrowDrawable(context: Context) :
     private fun <T> calculating(initial: T) =
         changeable(initial) { calculateTextBounds(badgeText) }
 }
+
+operator fun Motion.plus(other: Motion): Motion = CombinedMotion(this, other)
+
+private class CombinedMotion(
+    private val first: Motion,
+    private val second: Motion
+) : Motion(
+    second.endScale ?: first.endScale,
+    second.endRotation ?: first.endRotation
+) {
+    override fun toString(): String = buildString {
+        ss?.let { append(it) }
+        if (ss != null && rs != null) append("+")
+        rs?.let { append(it) }
+    }
+
+    override val ss get() = second.run { endScale?.let { ss } } ?: first.ss
+    override val rs get() = second.run { endRotation?.let { rs } } ?: first.rs
+}
+
+private inline fun <T> changeable(
+    initial: T,
+    crossinline onChange: (T) -> Unit
+) = observable(initial) { _, old, new -> if (old != new) onChange(new) }
+
+private fun lerp(start: Float, end: Float, fraction: Float): Float =
+    (1F - fraction) * start + fraction * end
 
 private fun clipOutPath(canvas: Canvas, path: Path) {
     if (Build.VERSION.SDK_INT >= 26) {
@@ -300,16 +316,9 @@ private fun clipOutPath(canvas: Canvas, path: Path) {
 
 @RequiresApi(26)
 private object CanvasVerificationHelper {
+
     @DoNotInline
     fun clipOutPath(canvas: Canvas, path: Path) {
         canvas.clipOutPath(path)
     }
 }
-
-private fun lerp(start: Float, end: Float, fraction: Float): Float =
-    (1F - fraction) * start + fraction * end
-
-private inline fun <T> changeable(
-    initial: T,
-    crossinline onChange: (T) -> Unit
-) = observable(initial) { _, old, new -> if (old != new) onChange(new) }

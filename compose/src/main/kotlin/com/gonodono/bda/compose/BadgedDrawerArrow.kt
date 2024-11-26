@@ -10,7 +10,6 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -32,6 +31,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.DrawableCompat.setLayoutDirection
 import com.gonodono.bda.view.BadgedDrawerArrowDrawable
+import com.gonodono.bda.view.plus
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -42,20 +42,20 @@ enum class ArrowDirection {
     Left, Right, Start, End;
 
     @Stable
-    fun toDrawableArrowDirection(): Int = ordinal
+    internal fun toDrawableArrowDirection(): Int = ordinal
 }
 
 @Immutable
 sealed class BadgeSize {
-    data object Standard : BadgeSize()
+    data object Normal : BadgeSize()
     data object Dot : BadgeSize()
-    data class Custom(val size: Float) : BadgeSize()
+    data class Custom(val diameter: Float) : BadgeSize()
 
     internal fun toDrawableSize(): BadgedDrawerArrowDrawable.BadgeSize =
         when (this) {
-            Standard -> BadgedDrawerArrowDrawable.BadgeSize.Standard
+            Normal -> BadgedDrawerArrowDrawable.BadgeSize.Normal
             Dot -> BadgedDrawerArrowDrawable.BadgeSize.Dot
-            is Custom -> BadgedDrawerArrowDrawable.BadgeSize.Custom(size)
+            is Custom -> BadgedDrawerArrowDrawable.BadgeSize.Custom(diameter)
         }
 }
 
@@ -86,6 +86,7 @@ sealed class Motion(internal val drawableMotion: DrawableMotion) {
         first: DrawableMotion,
         second: DrawableMotion
     ) : Motion(first + second) {
+
         override fun toString(): String = drawableMotion.toString()
     }
 
@@ -98,9 +99,7 @@ sealed class Motion(internal val drawableMotion: DrawableMotion) {
         return drawableMotion == other.drawableMotion
     }
 
-    override fun hashCode(): Int {
-        return drawableMotion.hashCode()
-    }
+    override fun hashCode(): Int = drawableMotion.hashCode()
 }
 
 @Composable
@@ -116,14 +115,14 @@ fun BadgedDrawerArrow(
     arrowDirection: ArrowDirection = ArrowDirection.Start,
     isSpinEnabled: Boolean = true,
     isBadgeEnabled: Boolean = false,
-    badgeSize: BadgeSize = BadgeSize.Standard,
-    badgeColor: Color = BadgedDrawerArrowDefaults.BadgeColor,
+    badgeSize: BadgeSize = BadgeSize.Normal,
+    badgeColor: Color = Color.Red,
     badgeCorner: Corner = Corner.TopRight,
     badgeOffset: Offset = Offset.Zero,
     badgeClipMargin: Dp = 0.dp,
     badgeText: String? = null,
     badgeTextSize: (default: Float) -> Float = { it },
-    badgeTextColor: Color = BadgedDrawerArrowDefaults.BadgeTextColor,
+    badgeTextColor: Color = Color.White,
     badgeTextOffset: Offset = Offset.Zero,
     badgeMotion: Motion = Motion.None,
     autoMirrorOnReverse: Boolean = false,
@@ -131,61 +130,44 @@ fun BadgedDrawerArrow(
 ) {
     val context = LocalContext.current
     val callback = rememberInvalidatorCallback()
-    val direction = LocalLayoutDirection.current.ordinal
-
     val drawable = remember(context) {
-        BadgedDrawerArrowDrawable(context).apply {
-            this.callback = callback
-            this.badgeSize = badgeSize.toDrawableSize()
-            this.badgeOffset = badgeOffset.toPointF()
-            this.badgeTextOffset = badgeTextOffset.toPointF()
-            setLayoutDirection(this, direction)
-        }
+        BadgedDrawerArrowDrawable(context).apply { this.callback = callback }
     }
 
-    LaunchedEffect(direction) { setLayoutDirection(drawable, direction) }
-    LaunchedEffect(badgeSize) {
-        drawable.badgeSize = badgeSize.toDrawableSize()
-    }
-    LaunchedEffect(badgeOffset) {
-        drawable.badgeOffset = badgeOffset.toPointF()
-    }
-    LaunchedEffect(badgeTextOffset) {
-        drawable.badgeTextOffset = badgeTextOffset.toPointF()
-    }
-
-    // Let the drawable handle checks for these. to*() funs are just lookups.
     drawable.progress = progress
     drawable.color = barColor.takeOrElse { LocalContentColor.current }.toArgb()
     drawable.direction = arrowDirection.toDrawableArrowDirection()
     drawable.isSpinEnabled = isSpinEnabled
     drawable.isBadgeEnabled = isBadgeEnabled
+    drawable.badgeSize = badgeSize.toDrawableSize()
     drawable.badgeColor = badgeColor.toArgb()
     drawable.badgeCorner = badgeCorner.toDrawableCorner()
+    drawable.badgeOffset = badgeOffset.toPointF()
     drawable.badgeText = badgeText
     drawable.badgeTextColor = badgeTextColor.toArgb()
+    drawable.badgeTextOffset = badgeTextOffset.toPointF()
     drawable.badgeTextSize = badgeTextSize
     drawable.badgeMotion = badgeMotion.toDrawableMotion()
     drawable.autoMirrorOnReverse = autoMirrorOnReverse
-
-    // These are just simple multiplication before the check.
-    with(LocalDensity.current) {
-        drawable.barLength = barLength.toPx()
-        drawable.barThickness = barThickness.toPx()
-        drawable.gapSize = barGapSize.toPx()
-        drawable.arrowHeadLength = arrowHeadLength.toPx()
-        drawable.arrowShaftLength = arrowShaftLength.toPx()
-        drawable.badgeClipMargin = badgeClipMargin.toPx()
-    }
+    setLayoutDirection(drawable, LocalLayoutDirection.current.ordinal)
 
     IconButton(
         onClick = onClick,
         modifier = modifier.drawWithCache {
+
             val right = size.width.roundToInt()
             val bottom = size.height.roundToInt()
             drawable.setBounds(0, 0, right, bottom)
+
+            drawable.barLength = barLength.toPx()
+            drawable.barThickness = barThickness.toPx()
+            drawable.gapSize = barGapSize.toPx()
+            drawable.arrowHeadLength = arrowHeadLength.toPx()
+            drawable.arrowShaftLength = arrowShaftLength.toPx()
+            drawable.badgeClipMargin = badgeClipMargin.toPx()
+
             onDrawWithContent {
-                callback.invalidate
+                callback.invalidations
                 drawable.draw(drawContext.canvas.nativeCanvas)
             }
         }
@@ -205,14 +187,14 @@ fun BadgedDrawerArrow(
     arrowDirection: ArrowDirection = ArrowDirection.Start,
     isSpinEnabled: Boolean = true,
     isBadgeEnabled: Boolean = false,
-    badgeSize: BadgeSize = BadgeSize.Standard,
-    badgeColor: Color = BadgedDrawerArrowDefaults.BadgeColor,
+    badgeSize: BadgeSize = BadgeSize.Normal,
+    badgeColor: Color = Color.Red,
     badgeCorner: Corner = Corner.TopRight,
     badgeOffset: Offset = Offset.Zero,
     badgeClipMargin: Dp = 0.dp,
     badgeText: String? = null,
     badgeTextSize: (default: Float) -> Float = { it },
-    badgeTextColor: Color = BadgedDrawerArrowDefaults.BadgeTextColor,
+    badgeTextColor: Color = Color.White,
     badgeTextOffset: Offset = Offset.Zero,
     badgeMotion: Motion = Motion.None,
     autoMirrorOnReverse: Boolean = true
@@ -251,10 +233,18 @@ fun rememberDrawerToggle(
     confirmStateChange: (DrawerValue) -> Boolean = { true }
 ): DrawerToggle {
     val drawerState = rememberDrawerState(initialValue, confirmStateChange)
-    val scope = rememberCoroutineScope()
+    return rememberDrawerToggle(drawerWidth, drawerState)
+}
+
+@Composable
+fun rememberDrawerToggle(
+    drawerWidth: Dp,
+    drawerState: DrawerState = rememberDrawerState(DrawerValue.Closed)
+): DrawerToggle {
     val density = LocalDensity.current
-    return remember(density) {
-        DrawerToggleImpl(drawerWidth, drawerState, scope, density)
+    val scope = rememberCoroutineScope()
+    return remember(drawerState, drawerWidth, density) {
+        DrawerToggleImpl(drawerState, drawerWidth, scope, density)
     }
 }
 
@@ -267,18 +257,18 @@ interface DrawerToggle {
     @Stable
     fun progress(): Float
 
-    @Stable
     fun toggle()
 }
 
 private class DrawerToggleImpl(
-    private val drawerWidth: Dp,
     override val drawerState: DrawerState,
+    private val drawerWidth: Dp,
     private val scope: CoroutineScope,
     density: Density
 ) : DrawerToggle, Density by density {
 
-    override fun progress(): Float = progress(drawerWidth, drawerState)
+    override fun progress(): Float =
+        progress(drawerState, drawerWidth)
 
     override fun toggle() {
         scope.launch { drawerState.toggle() }
@@ -287,12 +277,17 @@ private class DrawerToggleImpl(
 
 @Composable
 fun DrawerState.progress(drawerWidth: Dp): Float =
-    with(LocalDensity.current) { progress(drawerWidth, this@progress) }
+    with(LocalDensity.current) { progress(this@progress, drawerWidth) }
 
-private fun Density.progress(drawerWidth: Dp, drawerState: DrawerState): Float =
-    1F - drawerState.currentOffset / -drawerWidth.toPx()
+@Suppress("NOTHING_TO_INLINE")
+private inline fun Density.progress(
+    drawerState: DrawerState,
+    drawerWidth: Dp
+): Float = 1F - drawerState.currentOffset / -drawerWidth.toPx()
 
-suspend inline fun DrawerState.toggle() = if (isOpen) close() else open()
+suspend fun DrawerState.toggle() = if (isOpen) close() else open()
+
+val DotDiameter = 8.dp
 
 object BadgedDrawerArrowDefaults {
     val BarLength = 18.dp
@@ -300,21 +295,20 @@ object BadgedDrawerArrowDefaults {
     val BarGapSize = 3.dp
     val ArrowShaftLength = 16.dp
     val ArrowHeadLength = 8.dp
-    val BadgeColor = Color.Red
-    val BadgeTextColor = Color.White
 }
 
-private fun Offset.toPointF() = PointF(x, y)
+@Suppress("NOTHING_TO_INLINE")
+private inline fun Offset.toPointF() = PointF(x, y)
 
 @Composable
 private fun rememberInvalidatorCallback() = remember { InvalidatorCallback() }
 
 private class InvalidatorCallback : Drawable.Callback {
 
-    var invalidate by mutableIntStateOf(0)
+    var invalidations by mutableIntStateOf(0)
 
     override fun invalidateDrawable(who: Drawable) {
-        invalidate++
+        invalidations++
     }
 
     override fun scheduleDrawable(d: Drawable, r: Runnable, t: Long) {}

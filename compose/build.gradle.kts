@@ -1,6 +1,6 @@
 plugins {
     alias(libs.plugins.android.library)
-    alias(libs.plugins.jetbrains.kotlin.android)
+    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.compose.compiler)
     id("maven-publish")
 }
@@ -27,22 +27,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = "17"
+        jvmTarget = JavaVersion.VERSION_17.toString()
     }
     publishing {
-        singleVariant("release")
-    }
-    sourceSets {
-        named("main") {
-            java.srcDir("src/main/kotlin")
-        }
-    }
-}
-
-tasks {
-    register<Jar>("withSourcesJar") {
-        archiveClassifier.set("sources")
-        from(android.sourceSets.getByName("main").java.srcDirs)
+        singleVariant("release") { withSourcesJar() }
     }
 }
 
@@ -51,7 +39,6 @@ afterEvaluate {
         publications {
             create<MavenPublication>("release") {
                 from(components["release"])
-                artifact(tasks.named<Jar>("withSourcesJar"))
                 groupId = "com.gonodono.bda"
                 artifactId = "compose"
                 version = findProperty("library.version").toString()

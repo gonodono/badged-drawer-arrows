@@ -72,8 +72,8 @@ just a regular ol' drawable, really. The app in the `demo` module does it with a
 `ValueAnimator`, so you can look there for an explicit demonstration.
 
 There are a couple of slightly different ways to hook it up to
-`ActionBarDrawerToggle`, and the following show the minimum requirements for
-each, code-wise.
+`ActionBarDrawerToggle`, and the following snippets show the minimum
+requirements for each, code-wise.
 
 #### Using the support `ActionBar`
 
@@ -214,7 +214,7 @@ private val DrawerWidth = 240.dp
 @Preview(showBackground = true)
 @Composable
 fun AutomaticToggleExample() {
-    val drawerToggle = rememberDrawerToggle(DrawerWidth, DrawerValue.Open)
+    val drawerToggle = rememberDrawerToggle(DrawerWidth)
     Column {
         BadgedDrawerArrow(drawerToggle)
         ModalNavigationDrawer(
@@ -316,9 +316,9 @@ the Composables' file.
 
 ## Notes
 
-- The main caveat currently is that there are basically no restrictions or
+- Currently, the main caveat is that there are basically no restrictions or
   checks or coercions on input. For example, the badge is designed to show
-  numbers of length 0..3 relatively comfortably, but it does not prevent you
+  numbers of length 1..3 relatively comfortably, but it does not prevent you
   from entering values outside of those bounds, and neither does it do anything
   to "correct" an out-of-bounds value before application. Checks may be added in
   the future, but for now, it's up to the user to ensure workable input for the
@@ -330,26 +330,38 @@ the Composables' file.
   needed, the `badgeTextSize` property and parameter are
   `(default: Float) -> Float` functions to allow adjustments.
 
-- The Compose version doesn't work entirely correctly with the `@Preview`
-  functionality at the moment. Interactive mode seems to work just fine, but for
-  some reason that I've not yet deduced, the underlying `DrawerArrowDrawable`
-  doesn't draw in some static setups.
-
 - Letters and numbers are not regular shapes, obviously, which makes it
   difficult to center them visually, especially in arbitrary combinations.
   Therefore, the current algorithm simply centers them according to their
-  enclosing bounds, which is technically correct, but prone to causing certain
-  strings looking very wrong. The `badgeTextOffset` property/parameter is
+  enclosing bounds, which is technically correct, but prone to causing some
+  strings to look very wrong. The `badgeTextOffset` property/parameter is
   available to fiddle with the text placement, if needed.
 
-- This project is currently considered examples more than an official library.
-  As such, things may break without prior warning or deprecation.
+- The default values for the hamburger-arrow dimensions – e.g., `barThickness`,
+  `arrowHeadLength`, etc. – come from styles in appcompat themes, and they're
+  all pretty consistent across configurations, except for `barLength` and 
+  `gapBetweenBars`, which differ as follows:
 
-- There are no code docs yet, unfortunately. They will be added eventually, but
-  I'm sure you can figure things out in the meantime.
+  | Attribute        |  values  |  values-hdpi  |
+  |------------------|---------:|--------------:|
+  | `barLength`      | `18dp`   | `18.66dp`     |
+  | `gapBetweenBars` | `3dp`    | `3.33dp`      |
 
-- The `demo` module contains a simple app that demonstrates pretty much all of
-  the available features, in both frameworks.
+  I have no idea why those are the only ones that change, nor why it's only by
+  a handful of pixels at most, but I decided to ignore this, and the defaults in
+  both frameworks are always the integer `values`, regardless of the current
+  configuration.
+
+- For now, this project is considered to be examples more than a proper library.
+  Consequently, there are several lint warnings across the project about unused
+  elements, some things that should be hidden might be visible, and things may
+  break without prior warning or deprecation. 
+
+- There are no code docs, unfortunately. I may add some eventually, but most
+  things should be rather self-explanatory.
+
+- The `demo` module contains a simple app that demonstrates most of the
+  available features, in both frameworks.
 
 <p align="center">
 <img src="images/demo.png"
@@ -382,12 +394,13 @@ COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-[DrawerArrowDrawable]:
-  https://developer.android.com/reference/kotlin/androidx/appcompat/graphics/drawable/DrawerArrowDrawable
-[JitPack]: https://jitpack.io/#gonodono/badged-drawer-arrows
-[BadgedDrawerArrowDrawable]:
-  https://github.com/gonodono/badged-drawer-arrows/tree/main/view/src/main/kotlin/com/gonodono/bda/view/BadgedDrawerArrowDrawable.kt
-[BadgedDrawerArrow]:
-  https://github.com/gonodono/badged-drawer-arrows/tree/main/compose/src/main/kotlin/com/gonodono/bda/compose/BadgedDrawerArrow.kt
-[setVerticalMirror]:
-  https://developer.android.com/reference/kotlin/androidx/appcompat/graphics/drawable/DrawerArrowDrawable#setVerticalMirror(boolean)
+
+  [DrawerArrowDrawable]: https://developer.android.com/reference/kotlin/androidx/appcompat/graphics/drawable/DrawerArrowDrawable
+
+  [JitPack]: https://jitpack.io/#gonodono/badged-drawer-arrows
+
+  [BadgedDrawerArrowDrawable]: view/src/main/kotlin/com/gonodono/bda/view/BadgedDrawerArrowDrawable.kt
+
+  [BadgedDrawerArrow]: https://github.com/gonodono/badged-drawer-arrows/tree/main/compose/src/main/kotlin/com/gonodono/bda/compose/BadgedDrawerArrow.kt
+
+  [setVerticalMirror]: https://developer.android.com/reference/kotlin/androidx/appcompat/graphics/drawable/DrawerArrowDrawable#setVerticalMirror(boolean)

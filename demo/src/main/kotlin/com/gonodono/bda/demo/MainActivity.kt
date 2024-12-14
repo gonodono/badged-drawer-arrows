@@ -130,7 +130,7 @@ class MainActivity : AppCompatActivity() {
         ui.view.apply {
             setOnClickListener { handleClick() }
 
-            // Using the overlay because it alter bounds, which are set below.
+            // Using overlay 'cause it doesn't alter bounds, which we set below.
             overlay.add(drawable)
         }
         if (savedInstanceState == null && Showcase.checkShow(this)) {

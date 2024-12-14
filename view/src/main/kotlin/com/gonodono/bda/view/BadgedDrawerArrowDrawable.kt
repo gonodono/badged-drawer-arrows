@@ -62,10 +62,10 @@ class BadgedDrawerArrowDrawable(context: Context) :
     var badgeTextOffset: PointF by invalidating(PointF())
 
     sealed class Motion(
-        internal val endScale: Float? = null,
-        internal val endRotation: Float? = null
+        internal val endScale: Float?,
+        internal val endRotation: Float?
     ) {
-        data object None : Motion()
+        data object None : Motion(null, null)
         data object Grow : Motion(1.5F, null)
         data object Shrink : Motion(0F, null)
         data object FullSpinCW : Motion(null, 360F)
@@ -94,7 +94,14 @@ class BadgedDrawerArrowDrawable(context: Context) :
         applyMotion(progress)
     }
 
-    var autoMirrorOnReverse: Boolean = false
+    var autoMirrorOnReverse: Boolean by changeable(false) { mirror ->
+        if (mirror) {
+            if (progress == 1F) setVerticalMirror(true)
+        } else {
+            setVerticalMirror(false)
+        }
+        applyMotion(progress)
+    }
 
     var badgeDiameter: Float = with(badgeSize) { get() }
         private set
@@ -126,7 +133,7 @@ class BadgedDrawerArrowDrawable(context: Context) :
         val radius = badgeDiameter / 2F
 
         // The super class doesn't handle its vertical bounds correctly, so we
-        // translate the super draw here, and offset the clip by the same below.
+        // translate the super draw here and offset the clip by the same below.
         canvas.withTranslation(0F, bounds.top.toFloat()) {
             val clip = calculateClipPath(centerX, centerY, radius)
             if (clip != null) {
@@ -214,8 +221,8 @@ class BadgedDrawerArrowDrawable(context: Context) :
 
     override fun setProgress(progress: Float) {
         if (autoMirrorOnReverse) when (progress) {
-            1F -> setVerticalMirror(true)
             0F -> setVerticalMirror(false)
+            1F -> setVerticalMirror(true)
         }
         if (this.progress != progress) applyMotion(progress)
         super.setProgress(progress)
@@ -264,8 +271,8 @@ class BadgedDrawerArrowDrawable(context: Context) :
             }
     }
 
-    // This is figured at init so we don't have to hang onto the Context.
-    private val dotDiameter =
+    // This is figured at init so that we don't have to hang onto the Context.
+    private val dotDiameter: Float =
         DOT_DIAMETER_DP * context.resources.displayMetrics.density
 
     private fun <T> invalidating(initial: T, invalidateClip: Boolean = false) =

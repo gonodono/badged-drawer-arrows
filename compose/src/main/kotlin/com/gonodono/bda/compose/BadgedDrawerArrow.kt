@@ -289,6 +289,7 @@ suspend fun DrawerState.toggle() = if (isOpen) close() else open()
 
 val DotDiameter = 8.dp
 
+@Immutable
 object BadgedDrawerArrowDefaults {
     val BarLength = 18.dp
     val BarThickness = 2.dp

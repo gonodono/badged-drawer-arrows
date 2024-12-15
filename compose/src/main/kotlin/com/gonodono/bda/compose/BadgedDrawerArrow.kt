@@ -1,7 +1,6 @@
 package com.gonodono.bda.compose
 
 import android.graphics.PointF
-import android.graphics.drawable.Drawable
 import androidx.annotation.FloatRange
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
@@ -11,11 +10,8 @@ import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
@@ -23,9 +19,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -129,27 +125,10 @@ fun BadgedDrawerArrow(
     onClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
-    val callback = rememberInvalidatorCallback()
-    val drawable = remember(context) {
-        BadgedDrawerArrowDrawable(context).apply { this.callback = callback }
+    val drawable = remember(context, LocalConfiguration.current) {
+        BadgedDrawerArrowDrawable(context)
     }
-
-    drawable.progress = progress
-    drawable.color = barColor.takeOrElse { LocalContentColor.current }.toArgb()
-    drawable.direction = arrowDirection.toDrawableArrowDirection()
-    drawable.isSpinEnabled = isSpinEnabled
-    drawable.isBadgeEnabled = isBadgeEnabled
-    drawable.badgeSize = badgeSize.toDrawableSize()
-    drawable.badgeColor = badgeColor.toArgb()
-    drawable.badgeCorner = badgeCorner.toDrawableCorner()
-    drawable.badgeOffset = badgeOffset.toPointF()
-    drawable.badgeText = badgeText
-    drawable.badgeTextColor = badgeTextColor.toArgb()
-    drawable.badgeTextOffset = badgeTextOffset.toPointF()
-    drawable.badgeTextSize = badgeTextSize
-    drawable.badgeMotion = badgeMotion.toDrawableMotion()
-    drawable.autoMirrorOnReverse = autoMirrorOnReverse
-    setLayoutDirection(drawable, LocalLayoutDirection.current.ordinal)
+    val contentColor = LocalContentColor.current
 
     IconButton(
         onClick = onClick,
@@ -159,15 +138,31 @@ fun BadgedDrawerArrow(
             val bottom = size.height.roundToInt()
             drawable.setBounds(0, 0, right, bottom)
 
+            drawable.color = barColor.takeOrElse { contentColor }.toArgb()
             drawable.barLength = barLength.toPx()
             drawable.barThickness = barThickness.toPx()
             drawable.gapSize = barGapSize.toPx()
-            drawable.arrowHeadLength = arrowHeadLength.toPx()
             drawable.arrowShaftLength = arrowShaftLength.toPx()
+            drawable.arrowHeadLength = arrowHeadLength.toPx()
+            drawable.direction = arrowDirection.toDrawableArrowDirection()
+            drawable.isSpinEnabled = isSpinEnabled
+            setLayoutDirection(drawable, layoutDirection.ordinal)
+
+            drawable.isBadgeEnabled = isBadgeEnabled
+            drawable.badgeSize = badgeSize.toDrawableSize()
+            drawable.badgeColor = badgeColor.toArgb()
+            drawable.badgeCorner = badgeCorner.toDrawableCorner()
+            drawable.badgeOffset = badgeOffset.toPointF()
             drawable.badgeClipMargin = badgeClipMargin.toPx()
+            drawable.badgeText = badgeText
+            drawable.badgeTextSize = badgeTextSize
+            drawable.badgeTextColor = badgeTextColor.toArgb()
+            drawable.badgeTextOffset = badgeTextOffset.toPointF()
+            drawable.badgeMotion = badgeMotion.toDrawableMotion()
+            drawable.autoMirrorOnReverse = autoMirrorOnReverse
 
             onDrawWithContent {
-                callback.invalidations
+                drawable.progress = progress
                 drawable.draw(drawContext.canvas.nativeCanvas)
             }
         }
@@ -300,18 +295,3 @@ object BadgedDrawerArrowDefaults {
 
 @Suppress("NOTHING_TO_INLINE")
 private inline fun Offset.toPointF() = PointF(x, y)
-
-@Composable
-private fun rememberInvalidatorCallback() = remember { InvalidatorCallback() }
-
-private class InvalidatorCallback : Drawable.Callback {
-
-    var invalidations by mutableIntStateOf(0)
-
-    override fun invalidateDrawable(who: Drawable) {
-        invalidations++
-    }
-
-    override fun scheduleDrawable(d: Drawable, r: Runnable, t: Long) {}
-    override fun unscheduleDrawable(d: Drawable, r: Runnable) {}
-}

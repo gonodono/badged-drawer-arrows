@@ -17,6 +17,8 @@ The project has been set up as libraries and configured to be published, so you
 can get compiled dependencies through the very handy service [JitPack][JitPack],
 if the existing implementation happens to suit your needs.
 
+<br />
+
 ## Contents
 
 - [Added features](#added-features)
@@ -29,6 +31,8 @@ if the existing implementation happens to suit your needs.
     - [Manual toggle setup](#manual-toggle-setup)
     - [Manual drawer setup](#manual-drawer-setup)
 - [Notes](#notes)
+
+<br />
 
 ## Added features
 
@@ -60,6 +64,8 @@ causing it to rotate in the same direction when the drawer closes as when it
 opens. That's what the `autoMirrorOnReverse` property does: tells the drawable
 to handle this automatically without being attached to an
 `ActionBarDrawerToggle`.
+
+<br />
 
 ## Usage
 
@@ -173,6 +179,8 @@ class ToolbarActivity : AppCompatActivity() {
 ```
 
 </details>
+
+<br />
 
 ### Compose
 
@@ -313,6 +321,8 @@ fun ManualDrawerExample() {
 
 The `DrawerState.progress()` and `DrawerState.toggle()` extensions are public in
 the Composables' file.
+
+<br />
 
 ## Notes
 

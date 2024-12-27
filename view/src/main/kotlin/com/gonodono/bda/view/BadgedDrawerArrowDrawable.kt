@@ -32,7 +32,7 @@ class BadgedDrawerArrowDrawable(context: Context) :
     }
 
     var badgeSize: BadgeSize by changeable(BadgeSize.Normal) { size ->
-        badgeDiameter = with(size) { get() }
+        badgeDiameter = size.get(this)
         isClipInvalidated = true
         invalidateSelf()
     }
@@ -103,7 +103,7 @@ class BadgedDrawerArrowDrawable(context: Context) :
         applyMotion(progress)
     }
 
-    var badgeDiameter: Float = with(badgeSize) { get() }
+    var badgeDiameter: Float = badgeSize.get(this)
         private set
 
     override fun onBoundsChange(bounds: Rect) {

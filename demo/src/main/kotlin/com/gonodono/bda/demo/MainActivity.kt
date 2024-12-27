@@ -7,10 +7,8 @@ import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Color
 import android.graphics.PointF
-import android.graphics.Rect
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
-import android.view.TouchDelegate
 import android.widget.ArrayAdapter
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.background
@@ -26,6 +24,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed
 import androidx.compose.ui.unit.Dp
+import androidx.core.view.doOnLayout
 import androidx.core.widget.doOnTextChanged
 import com.gonodono.bda.compose.BadgedDrawerArrow
 import com.gonodono.bda.demo.databinding.ActivityMainBinding
@@ -54,9 +53,9 @@ class MainActivity : AppCompatActivity() {
         setContentView(ui.root)
 
         val drawable = BadgedDrawerArrowDrawable(this).apply {
-            isBadgeEnabled = true
-            badgeClipMargin = 6F
-            badgeText = "99+"
+            isBadgeEnabled = ui.isBadgeEnabled.isChecked
+            badgeClipMargin = ui.badgeClipMargin.value
+            badgeText = ui.badgeText.text.toString()
 
             // Causes it to mimic ActionBarDrawerToggle's anim w/o being in one.
             autoMirrorOnReverse = true
@@ -117,7 +116,7 @@ class MainActivity : AppCompatActivity() {
 
         fun handleClick() {
             // Showcase runs handleClick() when it's done, so return here.
-            showcase?.run { dispose(); showcase = null; return }
+            showcase?.run { showcase = null; dispose(); return }
 
             animator.cancel()
             if (drawable.progress == 0F) {
@@ -211,7 +210,7 @@ class MainActivity : AppCompatActivity() {
         // Same as Compose's minimumInteractiveComponentSize().
         val elementSize = 48 * resources.displayMetrics.density
 
-        ui.dualPane.addOnLayoutChangeListener { _, l, t, r, b, _, _, _, _ ->
+        ui.view.doOnLayout {
             // Centering the drawable in the overlay.
             drawable.apply {
                 val x = (ui.view.width - intrinsicWidth) / 2
@@ -222,14 +221,11 @@ class MainActivity : AppCompatActivity() {
 
             // DrawerArrowDrawable does not scale to its bounds, so both the
             // View and the Composable are scaled up to show the details.
-            val scale = 0.6F * minOf(r - l, b - t) / elementSize
+            val dimen = ui.dualPane.run { minOf(width, height) }
+            val scale = 0.6F * dimen / elementSize
+            ui.view.scaleX = scale
+            ui.view.scaleY = scale
             scaleState = scale
-            ui.view.scaleX = scale; ui.view.scaleY = scale
-            val scaledSize = (elementSize * scale).toInt()
-            val offset = ((scaledSize - elementSize) / 2F).toInt()
-            val bounds = Rect(0, 0, scaledSize, scaledSize)
-            bounds.offset(-offset, -offset)
-            ui.viewContainer.touchDelegate = TouchDelegate(bounds, ui.view)
         }
 
         val barColor = drawable.color.toComposeColor()

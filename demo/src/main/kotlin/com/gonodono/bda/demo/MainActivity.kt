@@ -26,16 +26,17 @@ import androidx.compose.ui.platform.ViewCompositionStrategy.DisposeOnViewTreeLif
 import androidx.compose.ui.unit.Dp
 import androidx.core.view.doOnLayout
 import androidx.core.widget.doOnTextChanged
-import com.gonodono.bda.compose.BadgedDrawerArrow
 import com.gonodono.bda.demo.databinding.ActivityMainBinding
 import com.gonodono.bda.demo.internal.DividersDrawable
 import com.gonodono.bda.demo.internal.SelectedListener
-import com.gonodono.bda.demo.internal.Showcase
+import com.gonodono.bda.demo.internal.applyInsetsListener
 import com.gonodono.bda.demo.internal.getThemeColor
 import com.gonodono.bda.demo.internal.setSwatchColor
 import com.gonodono.bda.demo.internal.showColorDialog
+import com.gonodono.bda.demo.internal.showIntro
 import com.gonodono.bda.view.BadgedDrawerArrowDrawable
 import com.gonodono.bda.view.plus
+import com.gonodono.bda.material3.BadgedDrawerArrow
 import androidx.compose.ui.graphics.Color as ComposeColor
 import com.gonodono.bda.compose.BadgeSize as ComposeBadgeSize
 import com.gonodono.bda.compose.Corner as ComposeCorner
@@ -50,6 +51,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         val ui = ActivityMainBinding.inflate(layoutInflater)
+        ui.root.applyInsetsListener()
         setContentView(ui.root)
 
         val drawable = BadgedDrawerArrowDrawable(this).apply {
@@ -105,9 +107,6 @@ class MainActivity : AppCompatActivity() {
             badgeText = text.toString()
         }
 
-        // Simple View showcase in lieu of a Toast or Snackbar or Dialog.
-        var showcase: Showcase? = null
-
         // Cheap and easy animation. Not concerned with correctness.
         val animator = ValueAnimator()
         animator.addUpdateListener {
@@ -115,9 +114,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         fun handleClick() {
-            // Showcase runs handleClick() when it's done, so return here.
-            showcase?.run { showcase = null; dispose(); return }
-
             animator.cancel()
             if (drawable.progress == 0F) {
                 animator.setObjectValues(0F, 1F)
@@ -131,9 +127,6 @@ class MainActivity : AppCompatActivity() {
 
             // Using overlay 'cause it doesn't alter bounds, which we set below.
             overlay.add(drawable)
-        }
-        if (savedInstanceState == null && Showcase.checkShow(this)) {
-            showcase = Showcase(this, ui.view, 25, "Click it!", ::handleClick)
         }
 
         ui.progress.addOnChangeListener { _, value, _ ->
@@ -253,7 +246,7 @@ class MainActivity : AppCompatActivity() {
                         badgeTextColor = badgeTextColor,
                         badgeMotion = badgeMotion,
                         autoMirrorOnReverse = true,
-                        onClick = ::handleClick,
+                        onClick = { handleClick() },
                         modifier = Modifier
                             .scale(scaleState)
                             .background(backgroundColor)
@@ -261,6 +254,8 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+
+        if (savedInstanceState == null) showIntro()
     }
 }
 

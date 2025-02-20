@@ -11,7 +11,6 @@ android {
 
     defaultConfig {
         minSdk = 21
-        consumerProguardFiles("consumer-rules.pro")
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -30,9 +29,9 @@ afterEvaluate {
         publications {
             create<MavenPublication>("release") {
                 from(components["release"])
-                groupId = "com.gonodono.bda"
+                groupId = findProperty("group.id")!!.toString()
                 artifactId = "compose"
-                version = findProperty("library.version").toString()
+                version = findProperty("library.version")!!.toString()
             }
         }
     }
@@ -41,11 +40,11 @@ afterEvaluate {
 dependencies {
 
     implementation(project(":view"))
+
     implementation(libs.androidx.core.ktx)
 
     implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.material3)
+    implementation(libs.androidx.foundation)
     implementation(libs.androidx.ui.tooling.preview)
-    implementation(libs.androidx.activity.compose)
     debugImplementation(libs.androidx.ui.tooling)
 }

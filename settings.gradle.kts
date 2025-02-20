@@ -25,4 +25,6 @@ rootProject.name = "badged-drawer-arrows"
 
 include(":view")
 include(":compose")
+include(":material")
+include(":material3")
 include(":demo")

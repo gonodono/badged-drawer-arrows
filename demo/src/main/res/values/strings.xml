@@ -1,3 +1,9 @@
 <resources>
+
     <string name="app_name">Badged Drawer Arrows</string>
+
+    <string name="header_intro">Welcome to the\n<big><b><u>Badged Drawer Arrows Demo</u></b></big></string>
+    <string name="text_intro">• The oversized toggle button can be clicked to start a simple progress animation.\n\n• Some colors in the example toggles, like those for the ripple indicators, are provided by theme attributes and will vary a bit between frameworks.</string>
+    <string name="label_hide_intro">Don\'t show again</string>
+
 </resources>

@@ -1,11 +1,12 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.compose.compiler)
     id("maven-publish")
 }
 
 android {
-    namespace = "com.gonodono.bda.view"
+    namespace = "com.gonodono.bda.material"
     compileSdk = 35
 
     defaultConfig {
@@ -29,7 +30,7 @@ afterEvaluate {
             create<MavenPublication>("release") {
                 from(components["release"])
                 groupId = findProperty("group.id")!!.toString()
-                artifactId = "view"
+                artifactId = "material"
                 version = findProperty("library.version")!!.toString()
             }
         }
@@ -38,7 +39,12 @@ afterEvaluate {
 
 dependencies {
 
-    api(libs.androidx.appcompat)
+    api(project(":compose"))
+
     implementation(libs.androidx.core.ktx)
-    implementation(libs.material.views)
+
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.material)
+    implementation(libs.androidx.ui.tooling.preview)
+    debugImplementation(libs.androidx.ui.tooling)
 }

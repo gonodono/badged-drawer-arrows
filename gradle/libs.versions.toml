@@ -1,12 +1,12 @@
 [versions]
-agp = "8.7.3"
-kotlin = "2.1.0"
+agp = "8.8.1"
+kotlin = "2.1.10"
 coreKtx = "1.15.0"
 appcompat = "1.7.0"
-activity = "1.9.3"
+activity = "1.10.0"
 material = "1.12.0"
 constraintlayout = "2.2.0"
-composeBom = "2024.12.01"
+composeBom = "2025.02.00"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -17,6 +17,8 @@ material-views = { group = "com.google.android.material", name = "material", ver
 
 androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity" }
+androidx-foundation = { module = "androidx.compose.foundation:foundation" }
+androidx-material = { module = "androidx.compose.material:material" }
 androidx-material3 = { module = "androidx.compose.material3:material3" }
 androidx-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
 androidx-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }

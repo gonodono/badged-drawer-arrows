@@ -234,13 +234,17 @@ class BadgedDrawerArrowDrawable(context: Context) :
     }
 
     private fun applyMotion(progress: Float) {
-        val newScale = when (val end = badgeMotion.endScale) {
-            null -> 1F
-            else -> lerp(1F, end, progress)
+        val endScale = badgeMotion.endScale
+        val newScale = if (endScale != null) {
+            lerp(1F, endScale, progress)
+        } else {
+            1F
         }
-        val newRotation = when (val end = badgeMotion.endRotation) {
-            null -> 0F
-            else -> lerp(0F, end, progress) * if (verticalMirror) -1 else 1
+        val endRotation = badgeMotion.endRotation
+        val newRotation = if (endRotation != null) {
+            lerp(0F, endRotation, progress) * if (verticalMirror) -1 else 1
+        } else {
+            0F
         }
         if (scale != newScale || rotation != newRotation) invalidateSelf()
         if (scale != newScale) isClipInvalidated = true
